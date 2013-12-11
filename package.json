@@ -20,7 +20,7 @@
     "grunt-contrib-connect": "~0.5.0"
   },
   "browserify-shim": {
-
+    "./bower_components/angular/angular.js": "angular"
   },
   "repository": "",
   "author": ""
