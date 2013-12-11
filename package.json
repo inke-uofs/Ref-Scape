@@ -1,0 +1,27 @@
+{
+  "name": "cobib",
+  "version": "0.0.0",
+  "description": "A game-based collaborative bibliography zotero plugin",
+  "main": "bundle.js",
+  "dependencies": {
+    "browserify": "~3.0.0",
+    "browserify-shim": "~3.0.4"
+  },
+  "devDependencies": {
+    "browserify-shim": "~3.0.4",
+    "browserify": "~3.0.0",
+    "grunt": "~0.4.2",
+    "grunt-browserify": "~1.2.12",
+    "deamdify": "~0.1.1",
+    "debowerify": "~0.4.0",
+    "grunt-watchify": "~0.1.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-contrib-livereload": "~0.1.2",
+    "grunt-contrib-connect": "~0.5.0"
+  },
+  "browserify-shim": {
+
+  },
+  "repository": "",
+  "author": ""
+}
