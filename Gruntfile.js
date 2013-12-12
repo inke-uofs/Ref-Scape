@@ -15,11 +15,10 @@ module.exports = function (grunt) {
                 dest: './bundle.js',
             },
             options: {
-                debug: true,
                 callback: function(b) {
+                    b.transform('browserify-shim');
                     b.transform('debowerify');
                     b.transform('deamdify');
-                    b.transform('browserify-shim');
                     return b;
                 }
             },
@@ -51,7 +50,6 @@ module.exports = function (grunt) {
         }
     });
 
-    //grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-watchify');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-connect');
