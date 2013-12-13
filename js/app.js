@@ -3,6 +3,7 @@ _ = require('underscore'),
 angular = require('angular'),
 controllers = require('./controllers');
 directives = require('./directives');
+require('bootstrap');
 
 var cobibApp = angular.module('cobibApp', []);
 

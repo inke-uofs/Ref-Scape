@@ -1,20 +1,33 @@
-'use strict';
+var 
+fs = require('fs'),
+path = require('path'),
+browserify = require('browserify'),
+shim = require('browserify-shim');
 
-var path = require('path');
+var b = browserify();
+shim(b, {
+    angular: {
+        path: "./bower_components/angular/angular.js", exports: 'angular'
+    }
+});
+b.transform('debowerify');
+b.add('./js/app.js');
+b.bundle(function(err, src){
+    if (!err) {
+        fs.writeFileSync(path.join(__dirname, 'bundle.js'));
+    }
+});
 
-var lrSnippet  = require('grunt-contrib-livereload/lib/utils').livereloadSnippet;
-var mountFolder = function(connect, dir) {
-  return connect.static(path.resolve(dir));
-};
 
-module.exports = function (grunt) {
-    grunt.initConfig({
-        watchify: {
+/*
+
+
+      "watch": "watchify js/app.js -o bundle.js -dv",
+browserify js/app.js > bundle.js
             build: {
-                src: ['./js/**/*.js'],
                 dest: './bundle.js',
             },
-            options: {
+
                 callback: function(b) {
                     b.transform('browserify-shim');
                     b.transform('debowerify');
@@ -58,3 +71,13 @@ module.exports = function (grunt) {
     grunt.registerTask('server', ['connect', 'watch']);
     grunt.registerTask('default', ['watchify:build:keepalive']);
 };
+  "browserify-shim": {
+    "./bower_components/jquery/jquery.min.js": "jQuery",
+    : "angular",
+    "./bower_components/bootstrap/dist/js/bootstrap.min.js": {
+        "depends": ["./bower_components/jquery/jquery.min.js:jQuery"],
+        "exports": "bootstrap"
+    }
+  },
+
+  */
