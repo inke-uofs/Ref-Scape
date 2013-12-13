@@ -1,35 +1,54 @@
 <!DOCTYPE html>
 <html ng-app="cobibApp">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <title>Co BIB</title>
-        <link href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
-        <script type="text/javascript" src="bundle.js"></script>
-        <style type="text/css">
-            rect {
-                fill: none;
-                pointer-events: all;
-            }
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Co BIB</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="libs.js"></script>
+    <script type="text/javascript" src="bundle.js"></script>
+    <style type="text/css">
+      rect {
+        fill: none;
+        pointer-events: all;
+      }
 
-            .node {
-                fill: #000;
-            }
+      .node {
+        fill: #000;
+      }
 
-            .node.user {
-                display: none;
-            }
+      .node.user {
+        display: none;
+      }
 
-            .link.user.item {
-                display: none;
-            }
+      .link.user.item {
+        display: none;
+      }
 
-            .link {
-                stroke: #999;
-            }
-        </style>
-    </head>
-    <body ng-controller="AppCtrl">
-        <div x-d3 x-nodes="nodes" x-links="links" 
-            x-width="width" x-height="height"></div>
-    </body>
+      .link {
+        stroke: #999;
+      }
+    </style>
+  </head>
+  <body ng-controller="AppCtrl">
+    <div x-d3 x-nodes="nodes" x-links="links" 
+      x-width="width" x-height="height"></div>
+
+    <script type="text/javascript">
+      var registerObserver = function (types) {
+        var request = document.createTextNode(JSON.stringify({
+          type: 'registerObserver', data: types
+        }));
+        document.head.appendChild(request);
+        request.addEventListener("zotero-response", function(event) {
+          console.log(JSON.parse(request.nodeValue));
+        }, false);
+
+        var event = document.createEvent("HTMLEvents");
+        event.initEvent("zotero-request", true, false);
+        request.dispatchEvent(event);
+      }
+
+      registerObserver(['item']);
+    </script>
+  </body>
 </html>

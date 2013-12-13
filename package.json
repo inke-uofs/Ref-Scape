@@ -19,11 +19,30 @@
     "grunt-contrib-connect": "~0.5.0",
     "d3": "~3.3.11",
     "underscore": "~1.5.2",
-    "process": "~0.5.1"
+    "process": "~0.5.1",
+    "watchify": "~0.4.1",
+    "through": "~2.3.4"
+  },
+  "browserify": {
+    "transform": ["browserify-shim", "deamdify"]
+  },
+  "browser": {
+    "jQuery": "./bower_components/jquery/jquery.min.js",
+    "bootstrap": "./bower_components/bootstrap/dist/js/bootstrap.js",
+    "angular": "./bower_components/angular/angular.js"
+  },
+  "browserify-shim": {
+    "angular": "angular",
+    "bootstrap": {"exports": "bootstrap", "depends": ["jQuery:jQuery"]}
   },
   "scripts": {
-    "build": "node build.js"
+    "build": 
+      "browserify -x jQuery -x bootstrap -x angular -x d3 js/app.js > bundle.js",
+    "libs": "browserify -r jQuery -r bootstrap -r angular -r d3 > libs.js",
+    "watch": 
+      "watchify -x jQuery -x bootstrap -x angular -x d3 js/app.js -o bundle.js -dv"
   },
   "repository": "",
   "author": ""
 }
+
