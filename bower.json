@@ -8,7 +8,9 @@
     "test",
     "tests"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "x2js": "*"
+  },
   "devDependencies": {
     "angular": "~1.2.4",
     "bootstrap": "~3.0.3"

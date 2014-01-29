@@ -4,20 +4,21 @@
   "description": "A game-based collaborative bibliography zotero plugin",
   "main": "bundle.js",
   "dependencies": {
-    "browserify": "~3.0.0",
-    "browserify-shim": "~3.0.4"
-  },
-  "devDependencies": {
+    "d3": "~3.3.11",
+    "underscore": "~1.5.2",
     "browserify-shim": "~3.0.4",
     "browserify": "~3.0.0",
     "deamdify": "~0.1.1",
     "debowerify": "~0.4.0",
-    "d3": "~3.3.11",
-    "underscore": "~1.5.2",
-    "watchify": "~0.4.1"
+    "watchify": "~0.4.1",
+    "oauth": "~0.9.11",
+    "URIjs": "~1.12.0"
   },
   "browserify": {
-    "transform": ["browserify-shim", "deamdify"]
+    "transform": [
+      "browserify-shim",
+      "deamdify"
+    ]
   },
   "browser": {
     "jQuery": "./bower_components/jquery/jquery.min.js",
@@ -26,17 +27,19 @@
   },
   "browserify-shim": {
     "angular": "angular",
-    "bootstrap": {"exports": "bootstrap", "depends": ["jQuery:jQuery"]}
+    "bootstrap": {
+      "exports": "bootstrap",
+      "depends": [
+        "jQuery:jQuery"
+      ]
+    }
   },
   "scripts": {
-    "build": 
-      "browserify -x jQuery -x bootstrap -x angular -x d3 js/app.js > bundle.js",
+    "build": "browserify -x jQuery -x bootstrap -x angular -x d3 js/app.js > bundle.js",
     "libs": "browserify -r jQuery -r bootstrap -r angular -r d3 > libs.js",
-    "watch": 
-      "watchify -x jQuery -x bootstrap -x angular -x d3 js/app.js -o bundle.js -dv",
+    "watch": "watchify -x jQuery -x bootstrap -x angular -x d3 js/app.js -o bundle.js -dv",
     "start": "python -m SimpleHTTPServer"
   },
   "repository": "",
   "author": ""
 }
-
