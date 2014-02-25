@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html ng-app="cobibApp">
+<html ng-app="cobibApp" lang="en">
   <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Co BIB</title>
-    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"/>
+    <link href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css"
+      rel="stylesheet"/>
     <script type="text/javascript" src="libs.js"></script>
     <script type="text/javascript" src="bundle.js"></script>
     <style type="text/css">
@@ -30,9 +35,14 @@
     </style>
   </head>
   <body ng-controller="AppCtrl">
+    <div class="container">
+      <h1>hello world</h1>
+    </div>
     <ul id="user">
     </ul>
+    <h1>{{ value }}</h1>
     <div x-d3 x-nodes="nodes" x-links="links" 
       x-width="width" x-height="height"></div>
+
   </body>
 </html>

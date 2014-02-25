@@ -24,8 +24,12 @@ exports.d3 = ['$http', function($http){
 
   return {
     restrict: 'AE',
-    scope: {width: '=', height: '='},
+    transclude: true,
+    scope: {width: '=', height: '=', },
     link: function (scope, element, attrs) {
+      console.log(scope);
+      console.log(scope.foo);
+      return;
       var
       angle,
       width = scope.width,
@@ -62,6 +66,8 @@ exports.d3 = ['$http', function($http){
       });
 
       function restart() {
+        console.log(links)
+        console.log(nodes)
         link = link.data(links);
         link.enter().insert('line', '.node').attr({
           class: function(d){ return 'link ' + d.type; }
@@ -86,6 +92,7 @@ exports.d3 = ['$http', function($http){
 
       zotero.sync(function(){
         zotero.getItems(function(rows){
+          console.log(rows);
           var users = {}
             , items = {}
             , targets = {}
