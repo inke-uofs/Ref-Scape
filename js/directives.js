@@ -24,28 +24,24 @@ exports.d3 = ['$http', function($http){
 
   return {
     restrict: 'AE',
-    transclude: true,
-    scope: {width: '=', height: '=', },
     link: function (scope, element, attrs) {
-      console.log(scope);
-      console.log(scope.foo);
-      return;
-      var
-      angle,
-      width = scope.width,
-      height = scope.height,
-      center = {x: width/2, y: height/2},
-      r = _.min([width, height])/4,
-      index = 0,
-      users = {},
-      items = {},
-      nodes = force.nodes(),
-      links = force.links(),
-      size = {width: width, height: height},
-      svg = getOrAppend(d3.select(element[0]), 'svg').attr(size),
-      board = getOrAppend(svg, 'rect').attr(size),
-      node = svg.selectAll('.node'),
-      link = svg.selectAll('.link');
+      var angle
+        , index = 0
+        , users = {}
+        , items = {}
+        , nodes = force.nodes()
+        , links = force.links()
+        , $el = $(element)
+        , width = $el.width() - 1
+        , height = $el.height() - 1
+        , center = {x: width/2, y: height/2}
+        , r = _.min([width, height])/4
+        , size = {width: width, height: height}
+        , svg = getOrAppend(d3.select(element[0]), 'svg').attr(size)
+        , board = getOrAppend(svg, 'rect').attr(size)
+        , node = svg.selectAll('.node')
+        , link = svg.selectAll('.link')
+      ;
 
       force.nodes(nodes).links(links).size(size).
         on('tick', function(e){
@@ -66,8 +62,6 @@ exports.d3 = ['$http', function($http){
       });
 
       function restart() {
-        console.log(links)
-        console.log(nodes)
         link = link.data(links);
         link.enter().insert('line', '.node').attr({
           class: function(d){ return 'link ' + d.type; }
@@ -82,6 +76,8 @@ exports.d3 = ['$http', function($http){
           class: function(d){ return 'node ' + d.type;},
         }).style('fill', function(d){return fill(d.user);}).call(force.drag);
 
+        console.log(links)
+        console.log(nodes)
         force.start();
       }
 
@@ -90,64 +86,71 @@ exports.d3 = ['$http', function($http){
         nodes.push(node);
       }
 
-      zotero.sync(function(){
-        zotero.getItems(function(rows){
-          console.log(rows);
-          var users = {}
-            , items = {}
-            , targets = {}
+      function renderItems(rows){
+        var users = {}
+          , items = {}
+          , targets = {}
+        ;
+        _.each(rows, function(item){
+          var item = _.extend(item, center, {type: 'item'})
+            , username = item.user
+            , target = item.target
+            , user
           ;
-          _.each(rows, function(item){
-            var item = _.extend(item, center, {type: 'item'})
-              , username = item.user
-              , target = item.target
-              , user
-            ;
-            items[item.key] = item;
-            addNode(item);
-            user = users[username];
-            if (!user){
-              user = {name: username};
-              users[username] = user;
-              addNode(user);
-            }
-            links.push({
-              source: item.index, target: user.index, type: 'user item'
-            });
-            if (target) {
-              targets[item.key] = target;
-            }
+          items[item.key] = item;
+          addNode(item);
+          user = users[username];
+          if (!user){
+            user = {name: username};
+            users[username] = user;
+            addNode(user);
+          }
+          links.push({
+            source: item.index, target: user.index, type: 'user item'
           });
-
-          _.each(targets, function(targetKey, sourceKey){
-            var source = items[sourceKey]
-              , target = items[targetKey]
-              , link
-            ;
-            if (source && target) {
-              link = {
-                source: source.index, target: target.index, type: 'item item'
-              };
-              links.push(link);
-              source.links || (source.links = []);
-              target.links || (target.links = []);
-              source.links.push(link);
-              target.links.push(link);
-            }
-          });
-
-          var angle = Math.PI * 2 / _.keys(users).length;
-          _.each(_.values(users), function(user, i){
-            _.extend(user, {
-              x: center.x - Math.cos(angle * i) * r,
-              y: center.y + Math.sin(angle * i) * r,
-              fixed: true,
-              type: 'user',
-            });
-          });
-          restart();
-
+          if (target) {
+            targets[item.key] = target;
+          }
         });
+
+        _.each(targets, function(targetKey, sourceKey){
+          var source = items[sourceKey]
+            , target = items[targetKey]
+            , link
+          ;
+          if (source && target) {
+            link = {
+              source: source.index, target: target.index, type: 'item item'
+            };
+            links.push(link);
+            source.links || (source.links = []);
+            target.links || (target.links = []);
+            source.links.push(link);
+            target.links.push(link);
+          }
+        });
+
+        var angle = Math.PI * 2 / _.keys(users).length;
+        _.each(_.values(users), function(user, i){
+          _.extend(user, {
+            x: center.x - Math.cos(angle * i) * r,
+            y: center.y + Math.sin(angle * i) * r,
+            fixed: true,
+            type: 'user',
+          });
+        });
+        restart();
+      }
+
+      renderItems([
+        {user: 'A', target: 'bar', key: 'foo'},
+        {user: 'B', target: 'world', key: 'bar'},
+        {user: 'C', target: 'foo', key: 'hello'},
+        {user: 'D', target: 'foo', key: 'world'},
+      ]);
+
+      zotero.sync(function(){
+        zotero.getItems(renderItems);
       });
 
     }
