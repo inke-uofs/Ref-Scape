@@ -5,7 +5,9 @@ util = require('util'),
 angular = require('angular'),
 URI = require('URIjs');
 
-exports.AppCtrl = ['$scope', '$http', '$q', function($scope, $http, $q){
+exports.AppCtrl = [
+  '$scope', '$http', '$q', 'Zotero',
+  function($scope, $http, $q, Zotero){
 
   var 
   width = 960,
@@ -16,6 +18,8 @@ exports.AppCtrl = ['$scope', '$http', '$q', function($scope, $http, $q){
     height: height,
     foo: 'bar',
     value: 'hello',
+    users: {},
+    items: {},
   });
   var foo = function() {
     var dfd = $q.defer();
@@ -23,17 +27,28 @@ exports.AppCtrl = ['$scope', '$http', '$q', function($scope, $http, $q){
       dfd.resolve();
     }, 200);
     return dfd.promise;
-  }
+  };
+  Zotero.getItems().done(function(items){
+    console.log('change items');
+    $scope.items = items;
+    $scope.value = 'hello world';
+    console.log(items);
+  });
+
+  $scope.$watch('users', function(users){
+    console.log(users);
+
+  });
 
 
   $http.get('/').then(function(){
     var p = foo();
     p.then(function(){
       console.log('here');
-      $scope.value += ' success';
+      //$scope.value += ' success';
     });
 
-    $scope.value += ' world';
+    //$scope.value += ' world';
   });
 
 }];

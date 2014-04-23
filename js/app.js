@@ -8,6 +8,7 @@ var _ = require('underscore')
   , directives = require('./directives')
 ;
 require('bootstrap');
+console.log('lib loaded');
 
 var cobibApp = angular.module('cobibApp', []);
 

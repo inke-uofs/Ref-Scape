@@ -24,11 +24,15 @@ exports.d3 = ['$http', function($http){
 
   return {
     restrict: 'AE',
+    scope: {
+      items: '=',
+      users: '=',
+    },
     link: function (scope, element, attrs) {
       var angle
         , index = 0
-        , users = {}
-        , items = {}
+        , users = scope.users
+        , items = scope.items
         , nodes = force.nodes()
         , links = force.links()
         , $el = $(element)
@@ -74,26 +78,25 @@ exports.d3 = ['$http', function($http){
             return (d.links || []).length * 2 + 5;
           },
           class: function(d){ return 'node ' + d.type;},
-        }).style('fill', function(d){return fill(d.user);}).call(force.drag);
+        }).style('fill', function(d){
+          return d.type === 'item' ? users[d.user].color : '';
+        }).call(force.drag);
 
-        console.log(links)
-        console.log(nodes)
         force.start();
       }
 
       function addNode(node) {
         node.index = nodes.length;
         nodes.push(node);
+        return node;
       }
 
       function renderItems(rows){
-        var users = {}
-          , items = {}
-          , targets = {}
-        ;
+        var targets = {};
+
         _.each(rows, function(item){
-          var item = _.extend(item, center, {type: 'item'})
-            , username = item.user
+          item = _.extend(item, center, {type: 'item'});
+          var username = item.user
             , target = item.target
             , user
           ;
@@ -101,10 +104,11 @@ exports.d3 = ['$http', function($http){
           addNode(item);
           user = users[username];
           if (!user){
-            user = {name: username};
+            user = addNode({});
             users[username] = user;
-            addNode(user);
           }
+          user.name = username;
+          user.color = fill(username);
           links.push({
             source: item.index, target: user.index, type: 'user item'
           });
@@ -142,12 +146,9 @@ exports.d3 = ['$http', function($http){
         restart();
       }
 
-      renderItems([
-        {user: 'A', target: 'bar', key: 'foo'},
-        {user: 'B', target: 'world', key: 'bar'},
-        {user: 'C', target: 'foo', key: 'hello'},
-        {user: 'D', target: 'foo', key: 'world'},
-      ]);
+      scope.$watch('items', function(items){
+        renderItems(items);
+      });
 
       zotero.sync(function(){
         zotero.getItems(renderItems);

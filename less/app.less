@@ -1,0 +1,40 @@
+body, html{
+    height: 100%;
+}
+
+
+.app {
+    height: 100%;
+
+    @import 'sidebar.less';
+    .board {
+        height: 100%;
+        padding: 0;
+        border: none;
+        overflow: hidden;
+    }
+}
+
+
+    rect {
+        fill: none;
+        pointer-events: all;
+    }
+
+    .node {
+        fill: #000;
+    }
+
+    .node.user {
+        display: none;
+    }
+
+    .link.user.item {
+        display: none;
+    }
+
+    .link {
+        stroke: #999;
+    }
+
+

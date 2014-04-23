@@ -1,0 +1,39 @@
+.sidebar {
+    .table;
+    .make-xs-column(3);
+    margin: 0;
+    height: 100%;
+    border-right: 1px solid @table-border-color;
+
+    tbody {
+        >tr {
+            >td {
+                padding: 15px;
+            }
+
+            &.search {
+                height: 70px;
+            }
+
+            &.users>td>ul {
+                padding: 0;
+                margin: 0;
+
+                li {
+                    list-style: none;
+
+                    div{
+                        display: inline-block;
+                        margin: 0;
+                        padding: 0;
+                        width: 12px;
+                        height: 12px;
+                        border: 1px solid black;
+                    }
+                }
+            }
+        }
+    }
+}
+
+

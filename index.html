@@ -5,58 +5,45 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Co BIB</title>
-    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css"
-      rel="stylesheet"/>
     <link href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css"
       rel="stylesheet"/>
+    <link href="less/style.less" type="text/css" rel="stylesheet/less"/>
     <script type="text/javascript" src="libs.js"></script>
     <script type="text/javascript" src="bundle.js"></script>
-    <style type="text/css">
-      body, html, .container-fluid {
-        height: 100%;
-      }
-
-      .columns {
-        height: 100%;
-        margin-top: 0;
-        margin-bottom: 0;
-        overflow: auto;
-      }
-
-      .board {
-        padding: 0;
-        border: none;
-        overflow: hidden;
-      }
-
-      rect {
-        fill: none;
-        pointer-events: all;
-      }
-
-      .node {
-        fill: #000;
-      }
-
-      .node.user {
-        display: none;
-      }
-
-      .link.user.item {
-        display: none;
-      }
-
-      .link {
-        stroke: #999;
-      }
-    </style>
+    <script type="text/javascript" 
+      src="bower_components/less/dist/less-1.7.0.min.js"></script>
   </head>
   <body ng-controller="AppCtrl">
-    <div class="container-fluid">
-      <ul class="col-xs-3 columns">
-        <li ng-repeat="u in users">{{ u.name }}</li>
-      </ul>
-      <div x-d3 class="col-xs-9 columns board" x-nodes="nodes" x-links="links">
+    <div class="app container-fluid">
+      <table class="sidebar">
+        <tbody>
+          <tr class="search">
+            <td class="input-group">
+              <input type="text" class="form-control" placeholder="Search"/>
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-default">
+                  <span class="glyphicon glyphicon-search"></span>
+                </button>
+              </span>
+            </td>
+          </tr>
+          <tr class="users"> 
+            <td>
+              <ul>
+                <li ng-repeat="u in users">
+                  <div class="user-color" style="background: {{u.color}};">
+                  </div>
+                  <span>{{ u.name }}</span>
+                </li>
+              </ul>
+            </td>
+          </tr>
+          <tr class="group-by"><td/></tr>
+        </tbody>
+      </table>
+
+      <div class="col-xs-9 columns board" 
+        x-d3 x-items="items" x-users="users" x-nodes="nodes" x-links="links">
       </div>
     </div>
   </body>
