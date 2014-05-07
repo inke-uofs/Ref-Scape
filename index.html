@@ -20,31 +20,43 @@
           <tr class="search">
             <td class="input-group">
               <input type="text" class="form-control" placeholder="Search"/>
-              <span class="input-group-btn">
+              <div class="input-group-btn">
                 <button type="button" class="btn btn-default">
                   <span class="glyphicon glyphicon-search"></span>
                 </button>
-              </span>
+              </div>
             </td>
           </tr>
-          <tr class="users"> 
+          <tr class="group-by" ng-controller="GroupByCtrl"> 
             <td>
-              <ul>
-                <li ng-repeat="u in users">
-                  <div class="user-color" style="background: {{u.color}};">
+              <div class="form-horizontal">
+                <div class="form-group group-by-options">
+                  <div class="col-xs-4">
+                    <label class="control-label">Group By:</label>
                   </div>
-                  <span>{{ u.name }}</span>
+                  <div class="col-xs-8">
+                    <select class="form-control" 
+                      ng-model="option" 
+                      ng-change="changeOption()"
+                      ng-options="option.name for option in options">
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <ul>
+                <li ng-repeat="item in items">
+                  <div class="color" style="background: {{item.color}};">
+                  </div>
+                  <span>{{ item.name }}</span>
                 </li>
               </ul>
             </td>
           </tr>
-          <tr class="group-by"><td/></tr>
         </tbody>
       </table>
 
       <div class="col-xs-9 columns board" 
-        x-d3 x-items="items" x-users="users" x-nodes="nodes" x-links="links">
-      </div>
+        x-board x-nodes="nodes" x-links="nodes"> </div>
     </div>
   </body>
 </html>

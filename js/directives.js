@@ -14,7 +14,117 @@ function getOrAppend(parent, selector) {
   return target;
 }
 
+exports.board = ['Zotero', function(Zotero) {
+  var force = d3.layout.force()
+    , svg, board, node, link
+  ;
+  force.gravity(0).linkStrength(0.2)
+    .charge(function(d){ 
+      return -((d.links || []).length * 10 + 10); 
+    })
+  ;
+
+  return {
+    restrict: 'A',
+    scope: {
+      nodes: '=',
+      links: '=',
+    },
+    link: function(scope, element) {
+      console.log('this is link');
+      var angle
+        , index = 0
+        , $el = $(element)
+        , width = $el.width() - 1
+        , height = $el.height() - 1
+        , center = {x: width/2, y: height/2}
+        , r = _.min([width, height])/4
+        , size = {width: width, height: height}
+        , svg = getOrAppend(d3.select(element[0]), 'svg').attr(size)
+        , board = getOrAppend(svg, 'rect').attr(size)
+        , node = svg.selectAll('.node')
+        , link = svg.selectAll('.link')
+      ;
+
+      force.nodes(scope.nodes).links(scope.links).size(size).start();
+
+      link = link.data(scope.links);
+      link.enter().insert('line', '.node').attr({
+        class: function(d){ return 'link ' + d.type; }
+      });
+
+      node = node.data(scope.nodes);
+
+      node.enter().insert('circle', '.node').attr({
+        r: function(d) {
+          return (d.links || []).length * 2 + 5;
+        },
+        class: function(d){ return 'node ' + d.type;},
+      }).style('fill', function(d){
+        return d.type === 'item' ? '#0F0' : '';
+      }).call(force.drag);
+
+      force.on('tick', function(e){
+        link.attr({
+          x1: function(d) {return d.source.x;},
+          y1: function(d) {return d.source.y;},
+          x2: function(d) {return d.target.x;},
+          y2: function(d) {return d.target.y;},
+        });
+        node.attr({
+          cx: function(d) {return d.x;},
+          cy: function(d) {return d.y;}
+        });
+      });
+
+      node.on('click', function(){
+
+      });
+    }
+  };
+}];
+
+/*
 exports.d3 = ['$http', function($http){
+  function renderItems(nodes, links){
+    var users = Zotero.getObjects('user')
+      , items = Zotero.getObjects('item')
+      , angle = Math.PI * 2 / _.keys(users).length
+      , i = 0
+    ;
+    _.each(users, function(user){
+      nodes.push(_.extend(user, {
+        x: center.x - Math.cos(angle * i) * r,
+        y: center.y + Math.sin(angle * i) * r,
+        fixed: true,
+        type: 'user',
+      }));
+      i += 1;
+    });
+    _.each(items, function(item){
+      nodes.push(_.extend(item, center, {type: 'item',}));
+      links.push({
+        source: item, target: users[item.user], type: 'user item'
+      });
+      if (item.target) {
+        var target = items[item.target]
+          , link = {
+            source: item, target: target, type: 'item item'
+          }
+        ;
+        item.links || (item.links = []);
+        item.links.push(link);
+        target.links || (target.links = []);
+        target.links.push(link);
+        links.push(link);
+      }
+    });
+  }
+
+
+      renderItems(nodes, links);
+
+
   // constants
   var 
   fill = d3.scale.category20(),
@@ -157,4 +267,4 @@ exports.d3 = ['$http', function($http){
     }
   };
 }];
-
+*/
