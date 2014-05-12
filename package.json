@@ -4,15 +4,15 @@
   "description": "A game-based collaborative bibliography zotero plugin",
   "main": "bundle.js",
   "dependencies": {
-    "d3": "~3.3.11",
-    "underscore": "~1.5.2",
-    "browserify-shim": "~3.0.4",
-    "browserify": "~3.0.0",
-    "deamdify": "~0.1.1",
-    "debowerify": "~0.4.0",
-    "watchify": "~0.4.1",
-    "oauth": "~0.9.11",
-    "URIjs": "~1.12.0"
+    "d3": "~3.4.6",
+    "underscore": "~1.6.0",
+    "browserify-shim": "~3.4.1",
+    "browserify": "~4.1.2",
+    "deamdify": "*",
+    "debowerify": "~0.7.0",
+    "watchify": "*",
+    "oauth": "*",
+    "URIjs": "~1.13.1"
   },
   "browserify": {
     "transform": [
