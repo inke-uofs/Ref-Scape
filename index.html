@@ -44,6 +44,10 @@
                 </div>
               </div>
               <ul>
+                <li>
+                  <div class="color" style="background: #000;"></div>
+                  <span>NONE</span>
+                </li>
                 <li ng-repeat="item in items">
                   <div class="color" style="background: {{item.color}};">
                   </div>
@@ -55,7 +59,8 @@
         </tbody>
       </table>
 
-      <div class="col-xs-9 columns board" x-board x-nodes="nodes"></div>
+      <div class="col-xs-9 columns board" 
+        x-board x-nodes="nodes" x-links="links"></div>
     </div>
   </body>
 </html>

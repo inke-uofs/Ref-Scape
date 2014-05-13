@@ -14,23 +14,35 @@ exports.Zotero = ['$rootScope', function($rootScope){
       'UD': {name: 'D'},
     },
     item: {
-      'IA': {user: 'UA', linkedItem: 'IB',},
-      'IB': {user: 'UB', linkedItem: 'ID',},
-      'IC': {user: 'UC', linkedItem: 'IA',},
-      'ID': {user: 'UC', linkedItem: 'IA',},
+      'IA': {user: 'UA', linkedItem: 'IB', author: 'a'},
+      'IB': {user: 'UB', linkedItem: 'ID', author: 'b'},
+      'IC': {user: 'UC', linkedItem: 'IA', author: 'b'},
+      'ID': {user: 'UC', linkedItem: 'IA', author: 'b'},
     },
     author: {
       'a': {name: 'a'},
+      'b': {name: 'b'},
     },
     tag: {
       '1': {name: 'tag1'},
       '2': {name: 'tag2'},
-    }
+    },
   };
+
+  var _groupBy = 'user';
 
   //$rootScope.$broadcast('hello');
 
-  return {
+  var Zotero = {
+    groupBy: function(by, silence){
+      if (by) {
+        _groupBy = by;
+        if (!silence) {
+          $rootScope.$broadcast('zotero-group-by', _groupBy);
+        }
+      }
+      return _groupBy;
+    },
     getObjects: function(model) {
       return _objects[model];
     },
@@ -45,5 +57,6 @@ exports.Zotero = ['$rootScope', function($rootScope){
       return dfd.resolve(users).promise(_items);
     },
   };
+  return Zotero;
 }];
 

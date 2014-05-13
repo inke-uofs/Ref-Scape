@@ -3,7 +3,6 @@ var _ = require('underscore')
   , util = require('util')
   , d3 = require('d3')
   , angular = require('angular')
-  , zotero = require('./zotero')
 ;
 
 function getOrAppend(parent, selector) {
@@ -14,64 +13,81 @@ function getOrAppend(parent, selector) {
   return target;
 }
 
-exports.board = ['Zotero', function(Zotero) {
+exports.board = [function() {
   function linkFn(scope, element, attrs) {
     var angle
       , index = 0
       , $el = $(element)
       , width = $el.width() - 1
       , height = $el.height() - 1
-      , center = {x: width/2, y: height/2}
-      , r = _.min([width, height])/4
       , size = {width: width, height: height}
       , svg = getOrAppend(d3.select(element[0]), 'svg').attr(size)
-      , board = getOrAppend(svg, 'rect').attr(size)
       , node = svg.selectAll('.node')
       , link = svg.selectAll('.link')
       , force = d3.layout.force()
     ;
-
-    force.gravity(0).linkStrength(0.2)
-      .nodes(scope.nodes).links(scope.links).size(size)
+    force.gravity(0).linkStrength(0.2).size(size)
       .charge(function(d){ 
-        return -((d.links || []).length * 10 + 10); 
+        return -((d.links || []).length * 10 + 10);
       })
-      .start()
+      .on('tick', function(e){
+        link.attr({
+          x1: function(d) {return d.source.x;},
+          y1: function(d) {return d.source.y;},
+          x2: function(d) {return d.target.x;},
+          y2: function(d) {return d.target.y;},
+        });
+        node.attr({
+          cx: function(d) {return d.x;},
+          cy: function(d) {return d.y;}
+        });
+      })
     ;
 
-    link = link.data(scope.links);
-    link.enter().insert('line', '.node').attr({
-      class: function(d){ return 'link ' + d.type; }
-    });
-
-    node = node.data(scope.nodes);
-
-    node.enter().insert('circle', '.node').attr({
-      r: function(d) {
-        return (d.links || []).length * 2 + 5;
-      },
-      class: function(d){ return 'node ' + d.type;},
-    }).style('fill', function(d){
-      return d.type === 'item' ? '#0F0' : '';
-    }).call(force.drag);
-
-    force.on('tick', function(e){
-      link.attr({
-        x1: function(d) {return d.source.x;},
-        y1: function(d) {return d.source.y;},
-        x2: function(d) {return d.target.x;},
-        y2: function(d) {return d.target.y;},
+    function restart(evt, args) {
+      var data = args || scope
+        , nodes = data.nodes
+        , links = data.links
+        , width = $el.width() - 1
+        , height = $el.height() - 1
+        , center = {x: width/2, y: height/2}
+        , r = _.min([width, height])/4
+      ;
+      _.each(nodes, function(node){
+        var angle = node.angle;
+        _.defaults(node, center);
+        if (angle) {
+          _.extend(node, {
+            x: center.x - Math.cos(angle) * r,
+            y: center.y + Math.sin(angle) * r,
+          });
+        }
       });
-      node.attr({
-        cx: function(d) {return d.x;},
-        cy: function(d) {return d.y;}
+
+      force.nodes(nodes).links(links);
+
+      link = link.data(links);
+      link.enter().insert('line', '.node').attr({
+        class: function(d){ return 'link ' + d.class; }
       });
-    });
+      link.exit().remove();
 
-    node.on('click', function(){
+      node = node.data(nodes);
+      node.enter().insert('circle', '.node').attr({
+        r: function(d) {
+          return (d.links || []).length * 2 + 5;
+        },
+        class: function(d){ return 'node ' + d.class + ' ' + d.name;},
+      }).style('fill', function(d){
+        return d.fill;
+      }).call(force.drag);
+      node.exit().remove();
 
-    });
+      force.start();
+    }
 
+    restart();
+    scope.$on('board-update', restart);
   }
   return {
     restrict: 'A',
