@@ -66,12 +66,16 @@ exports.board = [function() {
 
       force.nodes(nodes).links(links);
 
+      link = link.data([]);
+      link.exit().remove();
       link = link.data(links);
       link.enter().insert('line', '.node').attr({
         class: function(d){ return 'link ' + d.class; }
       });
       link.exit().remove();
 
+      node = node.data([]);
+      node.exit().remove();
       node = node.data(nodes);
       node.enter().insert('circle', '.node').attr({
         r: function(d) {

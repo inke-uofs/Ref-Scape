@@ -89,9 +89,11 @@ exports.AppCtrl = [
       nodes.push(_.extend(item, {
         class: 'item', fill: groupByItem && groupByItem.color || '#000'
       }));
-      links.push({
-        source: item, target: groupByItem, class: 'hide'
-      });
+      if (groupByItem) {
+        links.push({
+          source: item, target: groupByItem, class: 'hide'
+        });
+      }
       if (linkedItem) {
         var link = {source: item, target: linkedItem, class: 'item item'};
         item.links.push(link);
