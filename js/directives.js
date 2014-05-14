@@ -13,7 +13,7 @@ function getOrAppend(parent, selector) {
   return target;
 }
 
-exports.board = [function() {
+exports.board = ['Zotero', function(Zotero) {
   function linkFn(scope, element, attrs) {
     var angle
       , index = 0
@@ -28,6 +28,9 @@ exports.board = [function() {
     ;
     force.gravity(0).linkStrength(0.2).size(size)
       .charge(function(d){ 
+        if (d.type !== 'item') {
+          return 0;
+        }
         return -((d.links || []).length * 10 + 10);
       })
       .on('tick', function(e){
@@ -38,11 +41,80 @@ exports.board = [function() {
           y2: function(d) {return d.target.y;},
         });
         node.attr({
-          cx: function(d) {return d.x;},
-          cy: function(d) {return d.y;}
+          cx: function(d) {return Math.min(width, d.x);},
+          cy: function(d) {return Math.min(height, d.y);}
         });
       })
     ;
+
+    var lineData = [null, [0,0]];
+    var line = svg.append('path', '.helper-line');
+    var lineFn = d3.svg.line()
+      .x(function(d) { return d[0]; })
+      .y(function(d) { return d[1]; })
+      .interpolate('linear');
+
+    var $contextMenu = $('#context-menu');
+    $contextMenu.find('a').click(function(){ 
+      var selected = d3.selectAll('.selected');
+      selected.each(function(d){
+        lineData[0] = [d.x, d.y];
+      });
+      $contextMenu.addClass('hide');
+    });
+
+    node.on('mousedown', function(){
+    });
+
+    svg.on('mousemove', function(evt){
+      if (lineData[0]) {
+        var position = d3.mouse(this);
+        lineData[1] = position;
+        line.attr('d', lineFn(lineData));
+      }
+    });
+
+    svg.on('mousedown', function(evt){
+      var target = d3.select(d3.event.target);
+      var selected = d3.selectAll('.selected');
+      if (lineData[0]) {
+        if (target.classed('item')) {
+          var source = null;
+          var linkedItem = null;
+          selected.each(function(d){
+            source = d;
+          });
+          target.each(function(d){
+            linkedItem = d;
+          });
+          if (source && linkedItem) {
+            Zotero.addLink(source, linkedItem);
+          }
+        }
+        selected.classed('selected', false);
+        line.attr('d', lineFn([[0,0], [0,0]]));
+        lineData[0] = null;
+      }
+      if (target.classed('item')) {
+        target.each(function(d){
+          Zotero.selectItem(d);
+        });
+      }
+    });
+
+    svg.on('contextmenu', function(){
+      var target = d3.select(d3.event.target);
+      if (target.classed('item')) {
+        var position = d3.mouse(this);
+        d3.selectAll('.selected').classed('selected', false);
+        target.classed('selected', true);
+        $contextMenu.css({
+          left: position[0],
+          top: position[1],
+        }).removeClass('hide');
+      }
+      d3.event.preventDefault();
+    });
 
     function restart(evt, args) {
       var data = args || scope
@@ -92,6 +164,23 @@ exports.board = [function() {
 
     restart();
     scope.$on('board-update', restart);
+    scope.$on('search', function(evt, matches){
+      $('.match').removeClass('match');
+      if (matches) {
+        node.attr({
+          class: function(d) {
+            var cls = '';
+            var found = _.find(matches, function(match){
+              return d.key === match;
+            });
+            if (found) {
+              cls = ' match';
+            }
+            return 'node ' + d.class + ' ' + d.name + cls;
+          }
+        });
+      }
+    });
   }
   return {
     restrict: 'A',

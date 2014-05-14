@@ -37,7 +37,7 @@
   "scripts": {
     "build": "browserify -x jQuery -x bootstrap -x angular -x d3 js/app.js > bundle.js",
     "libs": "browserify -r jQuery -r bootstrap -r angular -r d3 > libs.js",
-    "watch": "watchify -x jQuery -x bootstrap -x angular -x d3 js/app.js -o bundle.js -dv",
+    "watch": "watchify -x jQuery -x bootstrap -x angular -x d3 js/app.js -d -o bundle.js -v",
     "start": "python -m SimpleHTTPServer"
   },
   "repository": "",

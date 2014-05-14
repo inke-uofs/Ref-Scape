@@ -21,11 +21,16 @@ exports.GroupByCtrl = ['$scope', 'Zotero', function($scope, Zotero){
     },
   });
   $scope.changeOption();
+  $scope.$on('zotero-update', function(){
+    $scope.$apply(function(){
+      $scope.changeOption();
+    });
+  });
 }];
 
 function colorGen(num) {
-  var len = Math.round(Math.pow(num, 1/3))
-    , gap = Math.round(0xFF / (len+1))
+  var len = Math.ceil(Math.pow(num, 1/3))
+    , gap = Math.ceil(0xFF / (len+1))
     , cur = gap
     , colors = []
     , results = []
@@ -38,7 +43,9 @@ function colorGen(num) {
   _.each(colors, function(r){
     _.each(colors, function(g){
       _.each(colors, function(b){
-        results.push('#' + r + g + b);
+        if (r !== g || r !== b) {
+          results.push('#' + r + g + b);
+        }
       });
     });
   });
@@ -48,6 +55,16 @@ function colorGen(num) {
 exports.AppCtrl = [
   '$scope', '$http', '$q', 'Zotero', 
   function($scope, $http, $q, Zotero){
+
+  var $groupBy = $('.sidebar tr.group-by>td>div');
+  var heightLimit = $(window).height() - $('.sidebar tr.search').height();
+  $groupBy.css({
+    'max-height': heightLimit,
+  });
+  $groupBy.find('ul').css({
+    'max-height': heightLimit - $groupBy.find('.group-by-options').height() - 45,
+    'overflow-y': 'auto',
+  });
 
   var width = 960
     , height = 500
@@ -79,26 +96,39 @@ exports.AppCtrl = [
       }));
       groupByIndex += 1;
     });
-    console.log(items);
+    var nonegroup = {
+      angle: angle * groupByIndex,
+      class: 'hide',
+      fixed: true,
+      color: colors[groupByIndex],
+    };
+    nodes.push(nonegroup);
+
     _.each(items, function(item){
       item.links = [];
     });
     _.each(items, function(item){
-      var linkedItem = item.linkedItem && items[item.linkedItem];
+      _.each(item.linkedItems, function(linkedItemKey){
+        var linkedItem = items[linkedItemKey];
+        if (linkedItem) {
+          var link = {source: item, target: linkedItem, class: 'item item'};
+          item.links.push(link);
+          linkedItem.links.push(link);
+          links.push(link);
+        }
+      });
       var groupByItem = groupByItems[item[groupBy]];
       nodes.push(_.extend(item, {
-        class: 'item', fill: groupByItem && groupByItem.color || '#000'
+        class: 'item', fill: groupByItem && groupByItem.color || '#F00'
       }));
       if (groupByItem) {
         links.push({
-          source: item, target: groupByItem, class: 'hide'
+          source: item, target: groupByItem, class: 'hide',
         });
-      }
-      if (linkedItem) {
-        var link = {source: item, target: linkedItem, class: 'item item'};
-        item.links.push(link);
-        linkedItem.links.push(link);
-        links.push(link);
+      }else{
+        links.push({
+          source: item, target: nonegroup, class: 'hide',
+        });
       }
     });
     $scope.nodes = nodes;
@@ -109,7 +139,20 @@ exports.AppCtrl = [
     });
   }
   updateBoard();
+  $scope.$on('zotero-update', updateBoard);
   $scope.$on('zotero-group-by', updateBoard);
+  $scope.$watch('search', function(){
+    var matches = [];
+    var search = $scope.search;
+    _.each(Zotero.getObjects('item'), function(item){
+      if (item.name === search) {
+        matches.push(item.key);
+      }
+    });
+    $scope.$broadcast('search', matches);
+  });
+
+
   /*
   $rootScope.$on('zotero-item', function(items){
     $scope.nodes = items;

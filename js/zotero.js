@@ -144,7 +144,7 @@ exports.getItems = function(callback) {
 
     new Request({ 
       type: 'db', database: 'zotero', data: 
-        'SELECT i.key as key, target.key as target FROM items i ' +
+        'SELECT i.key as key, target.key as linkedItem FROM items i ' +
         'LEFT OUTER JOIN itemSeeAlso link ON link.itemID = i.itemID ' +
         'LEFT OUTER JOIN items target ON link.linkedItemID = target.itemID ' +
         'WHERE i.key in (' + keys.join(',') + ')'
@@ -156,5 +156,6 @@ exports.getItems = function(callback) {
     }).send();
   }).send();
 };
+
 
 
