@@ -57,77 +57,38 @@ Observer.prototype.onResponse = function(evt) {
   this.callback(JSON.parse(evt.target.nodeValue));
 };
 
-var groupID = 214824;
-var server_uri = new URI('https://api.zotero.org/groups/' + groupID);
-var oauth_key = 'qBvcuulbebWanSPiPurAuM9K';
-server_uri.addQuery({
-  key: oauth_key,
-  content: 'none',
-});
-
-var _get = function(url) {
-  var uri = new URI(url).addQuery({key: oauth_key, content: 'none'});
+var _get = function(url, oauthKey) {
+  var uri = new URI(url).addQuery({key: oauthKey, content: 'none'});
   return $.get(uri.normalize().toString());
 };
 
-var _rss = function(url, entrys){
+var _rss = function(url, oauthKey, entrys, progress){
   entrys || (entrys = []);
 
-  return _get(url).then(function(atom){
+  return _get(url, oauthKey).then(function(atom){
     var $atom = $(atom)
       , $next = $atom.find('>feed>link[rel="next"]')
+      , $total = $atom.find('>feed>zapi\\:totalResults')
     ;
     _.each($atom.find('>feed>entry'), function(entry){
       entrys.push(entry);
     });
+    progress(entrys.length, $total.text());
     if ($next.length > 0) {
-      return _rss($next.attr('href'), entrys);
+      return _rss($next.attr('href'), oauthKey, entrys, progress);
     }
     return entrys;
   });
 };
 
-var rss = function(segment, querys) {
-  var url = server_uri.clone().segment(segment).addQuery(querys);
-  return _rss(url.normalize().toString());
+var rss = function(groupID, oauthKey, segment, querys, progress) {
+  var server_uri = new URI('https://api.zotero.org/groups/' + groupID);
+  querys = _.extend({key: oauthKey, content: 'none'}, querys);
+  var url = server_uri.segment(segment).addQuery(querys);
+  return _rss(url.normalize().toString(), oauthKey, [], progress);
 };
 
-var sync = function (callback) {
-  new Request({
-    type: 'db', database: 'cobib', data: 
-      'SELECT * FROM sync WHERE groupID = ' + groupID
-  }, function(response){
-    var version = response.length > 0 ? response[0].version : 0;
-    rss('items', {newer: version, limit: 100}).done(function(entrys){
-      var itemUsers = [];
-      _.each(entrys, function(entry){
-        var $entry = $(entry)
-          , username = $entry.find('>author>name').text()
-          , key = $entry.find('>zapi\\:key').text()
-          , v = $entry.find('>zapi\\:version').text()
-        ;
-        if (parseInt(v) > parseInt(version)) {
-          version = v;
-        }
-        itemUsers.push(
-          '(' + groupID + ', \'' + username + '\', \'' + key + '\')');
-      });
-      new Request({ 
-        type: 'db', database: 'cobib', data: 
-          'INSERT OR REPLACE INTO sync VALUES ('+ groupID+', '+version+')'
-      }).send();
-      if (itemUsers.length > 0) {
-        new Request({ 
-          type: 'db', database: 'cobib', data: 
-            'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES ' +
-            itemUsers.join(', ')
-        }, callback).send();
-      }else{
-        callback();
-      }
-    });
-  }).send();
-};
+
 var sync = function (groupID, oauthKey, callback, progress) {
   new Request({
     type: 'db', database: 'cobib', data: 
@@ -176,6 +137,15 @@ var sync = function (groupID, oauthKey, callback, progress) {
   }).send();
 };
 
+var authorize = function(groupID, callback) {
+  new Request({
+    type: 'db', database: 'cobib', data: 
+      'SELECT * FROM auth WHERE groupID = ' + groupID
+  }, function(response){
+    console.log(response);
+    callback(response.length > 0 ? response[0].key : '');
+  }).send();
+};
 
 exports.Zotero = ['$rootScope', function($rootScope){
   var _objects = {
@@ -189,118 +159,138 @@ exports.Zotero = ['$rootScope', function($rootScope){
     },
   };
 
-  sync(function(){
-    new Request({ 
-      type: 'db', database: 'cobib', data: 
+  var uri = new URI().normalize();
+  var groupID = uri.query(true).groupID;
+  if (groupID.substr(-1) === '/') {
+    groupID = groupID.substr(0, groupID.length - 1);
+  }
+  authorize(groupID, function(key) {
+    if (!key) {
+      $('.error').removeClass('hide');
+      return;
+    }
+    $('.sync').show();
+    sync(groupID, key, function(){
+      $('.sync').hide();
+      new Request({ 
+        type: 'db', database: 'cobib', data: 
         'SELECT username as user, key FROM itemUser WHERE groupID = ' + groupID
-    }, function(rows){
-      var items = Zotero.getObjects('item');
-      var users = Zotero.getObjects('user');
-      var tags = Zotero.getObjects('tag');
-      var authors = Zotero.getObjects('author');
+      }, function(rows){
+        var items = Zotero.getObjects('item');
+        var users = Zotero.getObjects('user');
+        var tags = Zotero.getObjects('tag');
+        var authors = Zotero.getObjects('author');
 
-      _.each(rows, function(item){
-        var user = users[item.user];
-        items[item.key] = item;
-        item.type = 'item';
-        item.fields = {};
-        if (!user) {
-          user = {};
-          users[item.user] = user;
+        _.each(rows, function(item){
+          var user = users[item.user];
+          items[item.key] = item;
+          item.type = 'item';
+          item.fields = {};
+          if (!user) {
+            user = {};
+            users[item.user] = user;
+          }
+          user.name = item.user;
+        });
+
+        var keys = '\'' +  _.keys(items).join('\', \'') + '\'';
+        var requests = [];
+        function addRequest(opts, callback) {
+
+          requests.push(new Request(opts, function(rows){
+            _.each(rows, callback);
+            broadcast();
+          }));
         }
-        user.name = item.user;
-      });
 
-      var keys = '\'' +  _.keys(items).join('\', \'') + '\'';
-      var requests = [];
-      function addRequest(opts, callback) {
+        addRequest({ 
+          type: 'db', database: 'zotero', data: 
+          'SELECT i.itemID as id, i.key as key FROM items i ' +
+          'WHERE i.key in (' + keys + ')'
+            }, function(row){
+              items[row.key].id = row.id;
+            });
 
-        requests.push(new Request(opts, function(rows){
-          _.each(rows, callback);
-          broadcast();
-        }));
-      }
+          addRequest({ 
+            type: 'db', database: 'zotero', data: 
+            'SELECT i.key as item, f.fieldName as fieldName, v.value as value ' +
+            'FROM itemData d ' +
+            'JOIN items i ON i.itemID = d.itemID ' +
+            'JOIN fields f ON f.fieldID = d.fieldID ' +
+            'JOIN itemDataValues v ON v.valueID = d.valueID ' +
+            'WHERE i.key in (' + keys + ')'
+              }, function(row){
+                items[row.item].fields[row.fieldName] = row.value;
+              });
 
-      addRequest({ 
-        type: 'db', database: 'zotero', data: 
-        'SELECT i.itemID as id, i.key as key FROM items i ' +
-        'WHERE i.key in (' + keys + ')'
-      }, function(row){
-        items[row.key].id = row.id;
-      });
+            addRequest({ 
+              type: 'db', database: 'zotero', data: 
+              'SELECT i.key as source, t.key as target FROM itemSeeAlso sa ' +
+              'JOIN items i ON i.itemID = sa.itemID ' +
+              'JOIN items t ON t.itemID = sa.linkedItemID ' +
+              'WHERE i.key in (' + keys + ') ' +
+              'AND t.key in (' + keys + ') '
+            }, function(row){
+              var item = items[row.source];
+              if (!item.linkedItems) {
+                item.linkedItems = [];
+              }
+              item.linkedItems.push(row.target);
+            });
 
-      addRequest({ 
-        type: 'db', database: 'zotero', data: 
-        'SELECT i.key as item, f.fieldName as fieldName, v.value as value ' +
-        'FROM itemData d ' +
-        'JOIN items i ON i.itemID = d.itemID ' +
-        'JOIN fields f ON f.fieldID = d.fieldID ' +
-        'JOIN itemDataValues v ON v.valueID = d.valueID ' +
-        'WHERE i.key in (' + keys + ')'
-      }, function(row){
-        items[row.item].fields[row.fieldName] = row.value;
-      });
+            addRequest({ 
+              type: 'db', database: 'zotero', data: 
+              'SELECT i.key as item, t.key as key, t.name as name  FROM tags t ' +
+              'JOIN itemTags it ON it.tagID = t.tagID ' +
+              'JOIN items i ON it.itemID = i.itemID ' +
+              'WHERE i.key in (' + keys + ')'
+                }, function(row){
+                  var item = items[row.item];
+                  if (!item.tag) {
+                    item.tag = [];
+                  }
+                  item.tag.push(row.key);
+                  tags[row.key] = row;
+                });
 
-      addRequest({ 
-        type: 'db', database: 'zotero', data: 
-        'SELECT i.key as source, t.key as target FROM itemSeeAlso sa ' +
-        'JOIN items i ON i.itemID = sa.itemID ' +
-        'JOIN items t ON t.itemID = sa.linkedItemID ' +
-        'WHERE i.key in (' + keys + ') ' +
-        'AND t.key in (' + keys + ') '
-      }, function(row){
-        var item = items[row.source];
-        if (!item.linkedItems) {
-          item.linkedItems = [];
-        }
-        item.linkedItems.push(row.target);
-      });
-
-      addRequest({ 
-        type: 'db', database: 'zotero', data: 
-        'SELECT i.key as item, t.key as key, t.name as name  FROM tags t ' +
-        'JOIN itemTags it ON it.tagID = t.tagID ' +
-        'JOIN items i ON it.itemID = i.itemID ' +
-        'WHERE i.key in (' + keys + ')'
-      }, function(row){
-        var item = items[row.item];
-        if (!item.tag) {
-          item.tag = [];
-        }
-        item.tag.push(row.key);
-        tags[row.key] = row;
-      });
-
-      addRequest({ 
-        type: 'db', database: 'zotero', data: 
-        'SELECT i.key as item, cd.firstName as firstName, ' + 
-        'cd.lastName as lastName, c.key as key ' + 
-        'FROM itemCreators ic ' +
-        'JOIN creators c ON c.creatorID = ic.creatorID ' +
-        'JOIN creatorTypes ct ON ct.creatorTypeID = ic.creatorTypeID ' +
-        'JOIN creatorData cd ON cd.creatorDataID = c.creatorDataID ' +
-        'JOIN items i ON ic.itemID = i.itemID ' +
-        'WHERE i.key in (' + keys + ') ' +
-        'AND ct.creatorType = \'author\' '
-      }, function(row){
-        var item = items[row.item];
-        if (!item.author) {
-          item.author = [];
-        }
-        item.author.push(row.key);
-        authors[row.key] = row;
-        row.name = row.firstName + ' ' + row.lastName;
-      });
+              addRequest({ 
+                type: 'db', database: 'zotero', data: 
+                'SELECT i.key as item, cd.firstName as firstName, ' + 
+                'cd.lastName as lastName, c.key as key ' + 
+                'FROM itemCreators ic ' +
+                'JOIN creators c ON c.creatorID = ic.creatorID ' +
+                'JOIN creatorTypes ct ON ct.creatorTypeID = ic.creatorTypeID ' +
+                'JOIN creatorData cd ON cd.creatorDataID = c.creatorDataID ' +
+                'JOIN items i ON ic.itemID = i.itemID ' +
+                'WHERE i.key in (' + keys + ') ' +
+                'AND ct.creatorType = \'author\' '
+              }, function(row){
+                var item = items[row.item];
+                if (!item.author) {
+                  item.author = [];
+                }
+                item.author.push(row.key);
+                authors[row.key] = row;
+                row.name = row.firstName + ' ' + row.lastName;
+              });
 
 
-      var broadcast = _.after(requests.length, function(){
-        $rootScope.$broadcast('zotero-update');
-      });
-      _.each(requests, function(r){
-        r.send();
-      });
-    }).send();
+              var broadcast = _.after(requests.length, function(){
+                $rootScope.$broadcast('zotero-update');
+              });
+              _.each(requests, function(r){
+                r.send();
+              });
+      }).send();
+    }, function(current, total, msg){
+      $('.init').hide();
+      $('.fetching').removeClass('hide');
+      $('.current').text(current);
+      $('.total').text(total);
+      $('.msg').text(msg);
+    });
   });
+
 
   var _groupBy = 'user';
 

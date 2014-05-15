@@ -80,7 +80,7 @@ exports.AppCtrl = [
       if (groupID.substr(-1) === '/') {
         groupID = groupID.substr(0, groupID.length - 1);
       }
-      zotero.saveKey(groupID, key, function(){
+      Zotero.saveKey(groupID, key, function(){
         window.location.reload();
       });
     }
