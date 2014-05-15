@@ -73,6 +73,17 @@ exports.AppCtrl = [
   _.extend($scope, {
     width: width,
     height: height,
+    key: '',
+    saveKey: function(key){
+      var uri = new URI().normalize();
+      var groupID = uri.query(true).groupID;
+      if (groupID.substr(-1) === '/') {
+        groupID = groupID.substr(0, groupID.length - 1);
+      }
+      zotero.saveKey(groupID, key, function(){
+        window.location.reload();
+      });
+    }
   });
 
   function updateBoard() {
@@ -117,19 +128,30 @@ exports.AppCtrl = [
           links.push(link);
         }
       });
-      var groupByItem = groupByItems[item[groupBy]];
-      nodes.push(_.extend(item, {
-        class: 'item', fill: groupByItem && groupByItem.color || '#F00'
-      }));
-      if (groupByItem) {
-        links.push({
-          source: item, target: groupByItem, class: 'hide',
+      var itemGroupBy = item[groupBy];
+      var groupByItem, grouped;
+      if (itemGroupBy) {
+        if (!_.isArray(itemGroupBy)) {
+          itemGroupBy = [itemGroupBy];
+        }
+        _.each(itemGroupBy, function(key){
+          groupByItem = groupByItems[key];
+          if (groupByItem) {
+            links.push({
+              source: item, target: groupByItem, class: 'hide',
+            });
+            grouped = true;
+          }
         });
-      }else{
+      }
+      if (!grouped) {
         links.push({
           source: item, target: nonegroup, class: 'hide',
         });
       }
+      nodes.push(_.extend(item, {
+        class: 'item', fill: groupByItem && groupByItem.color || '#F00'
+      }));
     });
     $scope.nodes = nodes;
     $scope.links = links;
@@ -144,11 +166,14 @@ exports.AppCtrl = [
   $scope.$watch('search', function(){
     var matches = [];
     var search = $scope.search;
-    _.each(Zotero.getObjects('item'), function(item){
-      if (item.name === search) {
-        matches.push(item.key);
-      }
-    });
+    if (search) {
+      _.each(Zotero.getObjects('item'), function(item){
+        var title = item.fields.title;
+        if (_.isString(title) && title.indexOf(search) > -1) {
+          matches.push(item.key);
+        }
+      });
+    }
     $scope.$broadcast('search', matches);
   });
 

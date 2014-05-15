@@ -92,7 +92,6 @@ var rss = function(segment, querys) {
   return _rss(url.normalize().toString());
 };
 
-
 var sync = function (callback) {
   new Request({
     type: 'db', database: 'cobib', data: 
@@ -129,109 +128,178 @@ var sync = function (callback) {
     });
   }).send();
 };
-
-var getItems = function(callback) {
-  new Request({ 
+var sync = function (groupID, oauthKey, callback, progress) {
+  new Request({
     type: 'db', database: 'cobib', data: 
-      'SELECT username, key FROM itemUser WHERE groupID = ' + groupID
-  }, function(rows){
-    var itemUsers = {}
-      , keys = []
-    ;
-    _.each(rows, function(itemUser){
-      var key = itemUser.key;
-      itemUsers[key] = itemUser.username;
-      keys.push('\''+key+'\'');
-    });
-
-    new Request({ 
-      type: 'db', database: 'zotero', data: 
-        'SELECT i.key as key, i.itemID as id, target.key as linkedItem FROM items i ' +
-        'LEFT OUTER JOIN itemSeeAlso link ON link.itemID = i.itemID ' +
-        'LEFT OUTER JOIN items target ON link.linkedItemID = target.itemID ' +
-        'WHERE i.key in (' + keys.join(',') + ')'
-    }, function(items){
-      _.each(items, function(item){
-        item.user = itemUsers[item.key];
+      'SELECT * FROM sync WHERE groupID = ' + groupID
+  }, function(response){
+    var version = response.length > 0 ? response[0].version : 0;
+    rss(groupID, oauthKey, 'items', {newer: version, limit: 100}, progress).
+      done(function(entrys){
+      var itemUsers = [];
+      _.each(entrys, function(entry){
+        var $entry = $(entry)
+          , username = $entry.find('>author>name').text()
+          , key = $entry.find('>zapi\\:key').text()
+          , v = $entry.find('>zapi\\:version').text()
+        ;
+        if (parseInt(v) > parseInt(version)) {
+          version = v;
+        }
+        itemUsers.push(
+          '(' + groupID + ', \'' + username + '\', \'' + key + '\')');
       });
-      callback(items);
-    }).send();
+      progress(entrys.length, entrys.length, 
+               'Sync Done, insert to database...');
+      if (itemUsers.length > 0) {
+        new Request({ 
+          type: 'db', database: 'cobib', data: 
+            'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES ' + 
+          itemUsers.join(', ')
+        }, function(response){
+          progress(entrys.length, entrys.length, 
+                   ' ' + entrys.length + ' row inserted into ' + 'database');
+          new Request({ 
+            type: 'db', database: 'cobib', data: 
+              'INSERT OR REPLACE INTO sync VALUES ('+ groupID+', '+version+')'
+          }, function(response){
+            progress(entrys.length, entrys.length, 
+                     'current version: ' + version);
+            callback(response);
+          }).send();
+
+        }).send();
+      }else{
+        callback();
+      }
+    });
   }).send();
 };
 
-var getTags = function(items, callback) {
-  var keys = _.keys(items);
-  new Request({ 
-    type: 'db', database: 'zotero', data: 
-      'SELECT i.key as item, t.key as key, t.name as name  FROM tags t ' +
-      'JOIN itemTags it ON it.tagID = t.tagID ' +
-      'JOIN items i ON it.itemID = i.itemID ' +
-      'WHERE i.key in (\'' + keys.join('\', \'') + '\')'
-  }, callback).send();
-};
 
 exports.Zotero = ['$rootScope', function($rootScope){
   var _objects = {
     user: {
-      /*
-      'UA': {name: 'A'},
-      'UB': {name: 'B'},
-      'UC': {name: 'C'},
-      'UD': {name: 'D'},
-      */
     },
     item: {
-      /*
-      'IA': {name: 'hello', user: 'UA', linkedItems: ['IB'], author: 'a', key: 'IA'},
-      'IB': {name: 'world', user: 'UB', linkedItems: ['ID'], author: 'b', key: 'IB'},
-      'IC': {name: 'foo', user: 'UC', linkedItems: ['IA'], author: 'b', key: 'IC'},
-      'ID': {name: 'bar', user: 'UC', linkedItems: ['IA'], author: 'b', key: 'ID'},
-      */
     },
     author: {
-      'a': {name: 'a'},
-      'b': {name: 'b'},
     },
     tag: {
     },
   };
 
   sync(function(){
-    getItems(function(rows){
+    new Request({ 
+      type: 'db', database: 'cobib', data: 
+        'SELECT username as user, key FROM itemUser WHERE groupID = ' + groupID
+    }, function(rows){
       var items = Zotero.getObjects('item');
       var users = Zotero.getObjects('user');
       var tags = Zotero.getObjects('tag');
+      var authors = Zotero.getObjects('author');
+
       _.each(rows, function(item){
-        var cur = items[item.key];
-        if (!cur) {
-          cur = {};
-          items[item.key] = cur;
-        }
-        if (item.linkedItem) {
-          cur.linkedItems || (cur.linkedItems = []);
-          cur.linkedItems.push(item.linkedItem);
-        }
         var user = users[item.user];
+        items[item.key] = item;
+        item.type = 'item';
+        item.fields = {};
         if (!user) {
           user = {};
           users[item.user] = user;
         }
         user.name = item.user;
-        _.extend(cur, item, {
-          type: 'item',
-        });
       });
-      getTags(items, function(rows){
-        _.each(rows, function(tag){
-          var item = items[tag.item];
-          if (item) {
-            item.tag = tag.key;
-            tags[tag.key] = tag;
-          }
-        });
+
+      var keys = '\'' +  _.keys(items).join('\', \'') + '\'';
+      var requests = [];
+      function addRequest(opts, callback) {
+
+        requests.push(new Request(opts, function(rows){
+          _.each(rows, callback);
+          broadcast();
+        }));
+      }
+
+      addRequest({ 
+        type: 'db', database: 'zotero', data: 
+        'SELECT i.itemID as id, i.key as key FROM items i ' +
+        'WHERE i.key in (' + keys + ')'
+      }, function(row){
+        items[row.key].id = row.id;
+      });
+
+      addRequest({ 
+        type: 'db', database: 'zotero', data: 
+        'SELECT i.key as item, f.fieldName as fieldName, v.value as value ' +
+        'FROM itemData d ' +
+        'JOIN items i ON i.itemID = d.itemID ' +
+        'JOIN fields f ON f.fieldID = d.fieldID ' +
+        'JOIN itemDataValues v ON v.valueID = d.valueID ' +
+        'WHERE i.key in (' + keys + ')'
+      }, function(row){
+        items[row.item].fields[row.fieldName] = row.value;
+      });
+
+      addRequest({ 
+        type: 'db', database: 'zotero', data: 
+        'SELECT i.key as source, t.key as target FROM itemSeeAlso sa ' +
+        'JOIN items i ON i.itemID = sa.itemID ' +
+        'JOIN items t ON t.itemID = sa.linkedItemID ' +
+        'WHERE i.key in (' + keys + ') ' +
+        'AND t.key in (' + keys + ') '
+      }, function(row){
+        var item = items[row.source];
+        if (!item.linkedItems) {
+          item.linkedItems = [];
+        }
+        item.linkedItems.push(row.target);
+      });
+
+      addRequest({ 
+        type: 'db', database: 'zotero', data: 
+        'SELECT i.key as item, t.key as key, t.name as name  FROM tags t ' +
+        'JOIN itemTags it ON it.tagID = t.tagID ' +
+        'JOIN items i ON it.itemID = i.itemID ' +
+        'WHERE i.key in (' + keys + ')'
+      }, function(row){
+        var item = items[row.item];
+        if (!item.tag) {
+          item.tag = [];
+        }
+        item.tag.push(row.key);
+        tags[row.key] = row;
+      });
+
+      addRequest({ 
+        type: 'db', database: 'zotero', data: 
+        'SELECT i.key as item, cd.firstName as firstName, ' + 
+        'cd.lastName as lastName, c.key as key ' + 
+        'FROM itemCreators ic ' +
+        'JOIN creators c ON c.creatorID = ic.creatorID ' +
+        'JOIN creatorTypes ct ON ct.creatorTypeID = ic.creatorTypeID ' +
+        'JOIN creatorData cd ON cd.creatorDataID = c.creatorDataID ' +
+        'JOIN items i ON ic.itemID = i.itemID ' +
+        'WHERE i.key in (' + keys + ') ' +
+        'AND ct.creatorType = \'author\' '
+      }, function(row){
+        var item = items[row.item];
+        if (!item.author) {
+          item.author = [];
+        }
+        item.author.push(row.key);
+        authors[row.key] = row;
+        row.name = row.firstName + ' ' + row.lastName;
+      });
+
+
+      var broadcast = _.after(requests.length, function(){
         $rootScope.$broadcast('zotero-update');
       });
-    });
+      _.each(requests, function(r){
+        r.send();
+      });
+    }).send();
   });
 
   var _groupBy = 'user';
@@ -255,7 +323,12 @@ exports.Zotero = ['$rootScope', function($rootScope){
       if (source && target) {
         source.linkedItems || (source.linkedItems = []);
         source.linkedItems.push(target.key);
+        new Request({ 
+          type: 'db', database: 'zotero', data: 
+            'INSERT INTO itemSeeAlso VALUES ('+ source.id +', '+ target.id +')'
+        }).send();
         $rootScope.$broadcast('zotero-update');
+
       }
     },
     getObjects: function(model) {
@@ -273,12 +346,35 @@ exports.Zotero = ['$rootScope', function($rootScope){
     },
     selectItem: function(item) {
       new Request({ 
-        type: 'zotero-pane', func: 'selectItem', data: item.id, 
-      }, function(){
-        console.log('cool');
+        type: 'zotero-pane', func: 'selectItem', data: [item.id], 
       }).send();
+    },
+    saveKey: function(groupID, key, callback) {
+      new Request({
+        type: 'db', database: 'cobib', data: 
+        'INSERT OR REPLACE INTO auth VALUES ('+ groupID+', \''+key+'\')'
+      }, callback).send();
     },
   };
   return Zotero;
 }];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getItems = function(callback) {
+};
 
