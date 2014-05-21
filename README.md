@@ -26,15 +26,13 @@ Setup
 
 	2.	If Zotero asks to import settings from the actions, allow the import and you will already be signed in. Otherwise, select Actions (gear icon) > Preferences > Sync > and Sign in under Zotero Sync Server. Allow time for Sync to take place.
 
-	3.	Select shared group bibliographic entries for display
-
-	4.	Right Click on the group library you want use, then select "RefScape". Refscape only works on group libraries, not items in "My Library".
+	3.	Right Click on the group library you want use, then select "RefScape". Refscape only works on top-levek group libraries, not items in "My Library" or sub-folders.
 	
-	5.	Follow the instructions shown on the authorization page. 
+	4.	Follow the instructions shown on the authorization page. 
 		(Follow the link, sign into Zotero, make an oauth key in Zotero settings, then copy and paste the new key into the “Key” input box on the authorization page and click save)
     - if you have previously generated a key for another group library you can use it. When you click on the link to generate a new key there is a "Manage all access keys" link at the bottom of the main white text area, just after the red form buttons. This will take you to a list of your keys and you can copy the pre-existing key.
     
-	6.	It may take a while to sync if you have a big library.
+	5.	It may take a while to sync if you have a big library.
 
 Usage
 
