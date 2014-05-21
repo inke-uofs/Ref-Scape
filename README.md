@@ -1,4 +1,4 @@
-ReadMe. Refscape was created by the INKE Research Group (www.inke.ca). For more information contact jon.bath@usask.ca .
+Refscape was created by the INKE Research Group (www.inke.ca). For more information contact jon.bath@usask.ca .
 
 Installation 
 
@@ -35,4 +35,10 @@ Setup
     - if you have previously generated a key for another group library you can use it. When you click on the link to generate a new key there is a "Manage all access keys" link at the bottom of the main white text area, just after the red form buttons. This will take you to a list of your keys and you can copy the pre-existing key.
     
 	6.	It may take a while to sync if you have a big library.
+
+Usage
+
+	- the Search box currently searches titles. Matching items will be highlighted with a red circle.
+	- clicking on a node will highlight the corresponding entry in the Zotero window at the bottom.
+	- right-clicking a node will allow you to link it to another node. Click on "Add Link" and then left click on the node you want to link to.
 
