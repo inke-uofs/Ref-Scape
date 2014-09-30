@@ -11,11 +11,11 @@ Installation
 		⁃Download and install Zotero for Firefox (not Zotero standalone or the browser extension)
 
 	3.	Automatic Installation
-		- In Firefox, go to the following URL: http://drc.usask.ca/projects/misc/inke.xpi or https://github.com/inke-uofs/Ref-Scape/raw/master/dist/refscape.xpi
+		- In Firefox, go to the following URL: http://drc.usask.ca/projects/misc/refscape.xpi or https://github.com/inke-uofs/Ref-Scape/raw/master/dist/refscape.xpi
 		- Click “Install”
 
 	4.	Manual Installation:
-    -Download the RefScape extension from: http://drc.usask.ca/projects/misc/inke.xpi or 		https://github.com/inke-uofs/Ref-Scape/raw/master/dist/refscape.xpi
+    -Download the RefScape extension from: http://drc.usask.ca/projects/misc/refscape.xpi or 		https://github.com/inke-uofs/Ref-Scape/raw/master/dist/refscape.xpi
     -Go to Firefox > Tools > Add-ons > Tools (gear by search menu) > Install add-on from file 
 
 	5.      Restart browser
