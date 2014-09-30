@@ -1,6 +1,6 @@
 {
-  "name": "cobib",
-  "version": "0.0.0",
+  "name": "refscape",
+  "version": "0.1.0",
   "ignore": [
     "**/.*",
     "node_modules",

@@ -100,6 +100,7 @@ exports.board = ['Zotero', function(Zotero) {
           Zotero.selectItem(d);
         });
       }
+      $contextMenu.addClass('hide');
     });
 
     svg.on('contextmenu', function(){

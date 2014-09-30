@@ -1,6 +1,6 @@
 {
-  "name": "cobib",
-  "version": "0.0.0",
+  "name": "refscape",
+  "version": "0.1.0",
   "description": "A game-based collaborative bibliography zotero plugin",
   "main": "bundle.js",
   "dependencies": {
@@ -22,8 +22,8 @@
   },
   "browser": {
     "jQuery": "./bower_components/jquery/dist/jquery.min.js",
-    "bootstrap": "./bower_components/bootstrap/dist/js/bootstrap.js",
-    "angular": "./bower_components/angular/angular.js"
+    "bootstrap": "./bower_components/bootstrap/dist/js/bootstrap.min.js",
+    "angular": "./bower_components/angular/angular.min.js"
   },
   "browserify-shim": {
     "angular": "angular",
