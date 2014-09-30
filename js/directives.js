@@ -165,6 +165,18 @@ exports.board = ['Zotero', function(Zotero) {
 
     restart();
     scope.$on('board-update', restart);
+    scope.$on('selected-group', function(evt, group){
+      $('.match').removeClass('match');
+      node.attr({
+        class: function(d) {
+          var cls = '';
+          if (d.fill === group.color) {
+            cls = ' match';
+          }
+          return 'node ' + d.class + ' ' + d.name + cls;
+        }
+      });
+    });
     scope.$on('search', function(evt, matches){
       $('.match').removeClass('match');
       if (matches) {

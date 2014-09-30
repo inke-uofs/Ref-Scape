@@ -83,6 +83,9 @@ exports.AppCtrl = [
       Zotero.saveKey(groupID, key, function(){
         window.location.reload();
       });
+    },
+    onGroupClick: function(item) {
+      $scope.$broadcast('selected-group', item);
     }
   });
 

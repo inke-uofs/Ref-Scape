@@ -43,13 +43,13 @@
                 <div class="form-group groups">
                   <ul>
                     <li>
-                    <div class="color" style="background: #F00;"></div>
-                    <span>NONE</span>
+                      <div class="color" style="background: #F00;"></div>
+                      <span>NONE</span>
                     </li>
-                    <li ng-repeat="item in items">
-                    <div class="color" style="background: {{item.color}};">
-                    </div>
-                    <span>{{ item.name }}</span>
+                    <li ng-repeat="item in items" ng-click="onGroupClick(item)">
+                      <div class="color" style="background: {{item.color}};">
+                      </div>
+                      <span>{{ item.name }}</span>
                     </li>
                   </ul>
                 </div>
