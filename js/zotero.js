@@ -106,7 +106,7 @@ exports.sync = function (callback) {
           , v = $entry.find('>zapi\\:version').text()
         ;
         if (parseInt(v) > parseInt(version)) {
-          version = v
+          version = v;
         }
         itemUsers.push(
           '(' + groupID + ', \'' + username + '\', \'' + key + '\')');
@@ -118,8 +118,8 @@ exports.sync = function (callback) {
       if (itemUsers.length > 0) {
         new Request({ 
           type: 'db', database: 'cobib', data: 
-            'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES '
-          + itemUsers.join(', ')
+            'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES ' +
+            itemUsers.join(', ')
         }, callback).send();
       }else{
         callback();

@@ -19,8 +19,10 @@ var Request = function(data, callback) {
 
 Request.prototype.send = function() {
   var evt = document.createEvent("HTMLEvents");
+  this._deferred = $.Deferred();
   evt.initEvent("zotero-request", true, false);
   this.request.dispatchEvent(evt);
+  return this._deferred;
 };
 
 Request.prototype.cleanRequest = function() {
@@ -31,7 +33,11 @@ Request.prototype.cleanRequest = function() {
 
 Request.prototype.onResponse = function(evt) {
   if (this.callback) {
-    this.callback(JSON.parse(evt.target.nodeValue));
+    var data = JSON.parse(evt.target.nodeValue);
+    this.callback(data);
+    this._deferred.resolve(data);
+  }else{
+    this._deferred.resolve();
   }
   this.cleanRequest();
 };
@@ -113,23 +119,28 @@ var sync = function (groupID, oauthKey, callback, progress) {
       progress(entrys.length, entrys.length, 
                'Sync Done, insert to database...');
       if (itemUsers.length > 0) {
-        new Request({ 
-          type: 'db', database: 'cobib', data: 
-            'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES ' + 
-          itemUsers.join(', ')
-        }, function(response){
-          progress(entrys.length, entrys.length, 
-                   ' ' + entrys.length + ' row inserted into ' + 'database');
-          new Request({ 
+        var i = 0
+          , chunk = 200
+          , requests = [];
+        for (i=0; i<itemUsers.length; i+=chunk) {
+          requests.push(new Request({ 
             type: 'db', database: 'cobib', data: 
-              'INSERT OR REPLACE INTO sync VALUES ('+ groupID+', '+version+')'
-          }, function(response){
-            progress(entrys.length, entrys.length, 
-                     'current version: ' + version);
-            callback(response);
-          }).send();
-
-        }).send();
+              'INSERT OR REPLACE INTO itemUser (groupID, username, key) VALUES ' + 
+              itemUsers.slice(i, i+chunk).join(', ')
+          }).send());
+        }
+        $.when.apply($, requests).done(function(){
+          progress(entrys.length, entrys.length, 
+                    ' ' + entrys.length + ' row inserted into ' + 'database');
+                    new Request({ 
+                      type: 'db', database: 'cobib', data: 
+                        'INSERT OR REPLACE INTO sync VALUES ('+ groupID+', '+version+')'
+                    }, function(response){
+                      progress(entrys.length, entrys.length, 
+                              'current version: ' + version);
+                              callback(response);
+                    }).send();
+        });
       }else{
         callback();
       }
