@@ -26,7 +26,7 @@ Setup
 
 	2.	If Zotero asks to import settings from the actions, allow the import and you will already be signed in. Otherwise, select Actions (gear icon) > Preferences > Sync > and Sign in under Zotero Sync Server. Allow time for Sync to take place.
 
-	3.	Right Click on the group library you want use, then select "RefScape". Refscape only works on top-levek group libraries, not items in "My Library" or sub-folders.
+	3.	Right Click on the group library you want use, then select "RefScape". Refscape only works on top-level group libraries, not items in "My Library" or sub-folders.
 	
 	4.	Follow the instructions shown on the authorization page. 
 		(Follow the link, sign into Zotero, make an oauth key in Zotero settings, then copy and paste the new key into the “Key” input box on the authorization page and click save)
